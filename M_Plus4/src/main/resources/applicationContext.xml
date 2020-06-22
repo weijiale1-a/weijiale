@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd 
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+	
+	<!-- 扫描service层 -->
+	<context:component-scan base-package="com.mdy.service" />
+	
+	<!-- 容器中加载*.properties资源文件 -->
+	<context:property-placeholder location="classpath:jdbc.properties" />
+	
+	<!-- 创建数据源连接池对象 -->
+	<bean id="ds" class="org.apache.ibatis.datasource.pooled.PooledDataSource">
+		<property name="username" value="${user}" />
+		<property name="password" value="${pwd}" />
+		<property name="url" value="${url}" />
+		<property name="driver" value="${driverUrl}" />
+	</bean>
+	
+	<!-- 配置逻辑删除实例 -->
+	<bean id="lsi" class="com.baomidou.mybatisplus.mapper.LogicSqlInjector"></bean>
+	
+	<!-- 配置MyBatis-Plus全局策略 -->
+	<bean id="gc" class="com.baomidou.mybatisplus.entity.GlobalConfiguration" >
+	
+		<!-- 注入逻辑删除实例 -->
+		<property name="sqlInjector" ref="lsi" />
+		<!-- 注入逻辑删除值 -->
+		<property name="logicDeleteValue" value="0" />
+		<!-- 注入逻辑删除之前值 -->
+		<property name="logicNotDeleteValue" value="1" />
+		
+	</bean>
+	
+	<!-- 创建MyBatis-Plus的sqlSessionFactory对象用于关联MyBatis配置文件 -->
+	<bean id="sf" class="com.baomidou.mybatisplus.spring.MybatisSqlSessionFactoryBean">
+		<!-- 注入数据源 -->
+		<property name="dataSource" ref="ds" />
+		<!-- 注入全局策略对象 -->
+		<property name="globalConfig" ref="gc" />
+		<!-- 关联加载配置文件 -->
+		<property name="configLocation" value="classpath:mybatis.xml" />
+		<!-- 配置插件 -->
+		<property name="plugins" >
+			<list>
+				<!-- 分页插件 -->
+				<bean class="com.baomidou.mybatisplus.plugins.PaginationInterceptor" />
+				<!-- 性能分析插件 -->
+				<bean class="com.baomidou.mybatisplus.plugins.PerformanceInterceptor" >
+					<!-- 过程格式化 -->
+					<property name="format" value="true" />
+				</bean>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- 根据dao类所在包名，Spring自动扫描其下的类 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.mdy.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sf" />
+	</bean>
+	
+</beans>
